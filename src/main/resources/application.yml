@@ -1,0 +1,36 @@
+server:
+  port: 9000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: TRACE
+
+
+spring:
+  autoconfigure:
+    exclude: org.springframework.cloud.gateway.config.GatewayRedisAutoConfiguration
+  cloud:
+    gateway:
+      routes:
+        - id: product-route
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                rate-limiter: "#{@productRateLimiter}"
+                fallback-uri: forward:/rateLimitFallback
+            - RewritePath=/api/product/(?<segment>.*), /product/${segment}
+
